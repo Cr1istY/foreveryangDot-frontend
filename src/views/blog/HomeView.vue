@@ -1,4 +1,5 @@
 <template>
+<div class="page-container">
   <div>
     <!-- 头部简介区 -->
     <n-card embedded :bordered="false" class="hero-section">
@@ -19,9 +20,9 @@
         </div>
       </n-space>
     </n-card>
-
+    <div class="content-wrapper">
     <!-- 主内容区 -->
-    <n-grid :cols="isMobile ? 1 : 2" :x-gap="24" :y-gap="24" style="margin-top: 24px; margin-left: 24px;">
+    <n-grid :cols="isMobile ? 1 : 2" :x-gap="24" :y-gap="24" class="main-grid">
       <!-- 左侧：最新文章 + 精选文章 -->
       <n-grid-item>
         <!-- 精选文章 -->
@@ -126,7 +127,18 @@
       </n-grid-item>
 
     </n-grid>
+    </div>
   </div>
+
+  <footer class="site-footer">
+    <div class="footer-content">
+      <div class="copyright">
+        <span class="icp">渝ICP备2025056615号</span>
+        <span>© {{ new Date().getFullYear() }} Crist Yang.</span>
+      </div>
+    </div>
+  </footer>
+</div>
 </template>
 
 <script setup lang="ts">
@@ -164,7 +176,7 @@ const featuredPosts = [
     title: 'Vue 3 性能优化的 10 个技巧',
     category: '性能',
     date: '2024-10-22',
-    excerpt: '涵盖组件懒加载、响应式数据优化、编译时优化等实战方案...'
+    excerpt: '涵盖组件懒加载、响应式数据优化、编译时优化等实战方案...涵盖组件懒加载、响应式数据优化、编译时优化等实战方案...'
   }
 ]
 
@@ -243,12 +255,40 @@ const getIcon = (tech: TechType) => {
 </script>
 
 <style scoped>
+
+.page-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.content-wrapper {
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 0 24px;
+}
+
 .hero-section {
   text-align: center;
-  padding: 32px 16px;
+  padding: 32px 24px;
+  width: 100vw;
+  margin-left: calc(-1 * (100vw - 100%) / 2);
 }
+
+.main-grid {
+  margin-top: 24px;
+  margin-left: 0;
+}
+
+/* 深度选择器修改 n-card 的样式 */
+.hero-section :deep(.n-card) {
+  border-radius: 0;
+}
+
 .intro-text {
   max-width: 600px;
+  margin: 0 auto; /* 添加水平居中 */
 }
 .bio {
   margin-top: 8px;
@@ -293,4 +333,58 @@ const getIcon = (tech: TechType) => {
   text-decoration: underline;
 }
 
+.site-footer {
+  background-color: #fff;
+  padding: 20px 0;
+  margin-top: auto;
+}
+
+.footer-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.copyright {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+}
+
+.icp {
+  display: flex;
+  flex-direction: row;
+  color: #666;
+}
+
+
+@media (max-width: 768px) {
+
+  .content-wrapper {
+    padding: 0;
+    margin: 0;
+
+  }
+
+  .main-grid {
+    margin: 0;
+  }
+
+  .footer-content {
+    flex-direction: column;
+    text-align: center;
+    gap: 12px;
+  }
+
+  .copyright {
+    align-items: center;
+  }
+
+  .hero-section {
+    padding: 32px 16px;
+  }
+}
 </style>

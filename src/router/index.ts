@@ -22,7 +22,8 @@ const router = createRouter({
     {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
-    component: NotFound
+    component: NotFound,
+    meta: { title: '页面走丢了' },
     }
   ],
 })

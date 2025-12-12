@@ -56,6 +56,20 @@
           {{ tag.name }} ({{ tag.count }})
         </n-tag>
       </div>
+      <div class="tag-cloud" style="margin-top: 24px;">
+        <n-h3 class="sidebar-title">😊 更多信息</n-h3>
+          <n-space vertical>
+            <n-button text tag="a" @click="$router.push('/')">
+              🏠 foreveryang
+            </n-button>
+            <n-button text tag="a" href="https://github.com/Cr1istY/foreveryangDot-frontend" target="_blank">
+              💻 source code
+            </n-button>
+            <n-button text tag="a" href="https://beian.miit.gov.cn/" target="_blank">
+              渝ICP备2025056615号
+            </n-button>
+          </n-space>
+      </div>
     </aside>
 
     <!-- 右侧主内容 -->
@@ -70,10 +84,11 @@
             {{ post.title }}
           </router-link>
           <div class="post-meta">
+            <n-text type="secondary" class="post-date">{{ post.date }}</n-text>
             <!-- 使用 NAvatarGroup 展示标签头像 -->
             <n-avatar-group
               :options="getPostTagOptions(post)"
-              :max="2"
+              :max="3"
               size="small"
               :style="{ display: 'inline-flex', gap: '4px' }"
             >
@@ -104,7 +119,7 @@
               </template>
             </n-avatar-group>
 
-            <n-text type="secondary" class="post-date">{{ post.date }}</n-text>
+
           </div>
           <p class="post-excerpt">{{ post.excerpt }}</p>
         </div>
@@ -214,7 +229,7 @@ const loadAllPosts = async () => {
       {
         id: 1,
         title: '如何用 Naive UI 构建响应式博客',
-        tags: ['Vue', 'UI', '响应式'],
+        tags: ['Vue', 'UI', '响应式', 'Vite', '工具链', '插件'],
         date: '2024-11-15',
         excerpt: '从零开始搭建一个支持桌面和手机访问的个人博客系统...',
       },
@@ -249,7 +264,7 @@ const loadAllPosts = async () => {
       {
         id: 6,
         title: 'Go 语言并发模式详解',
-        tags: ['Go', '并发', 'goroutine'],
+        tags: ['Go', '并发'],
         date: '2024-11-28',
         excerpt: 'goroutine + channel 的经典组合，构建高并发服务...',
       },
@@ -633,7 +648,7 @@ const onTagSelect = (tag: string): void => {
 }
 
 .post-date {
-  margin-left: 8px;
+  margin-right: 8px;
 }
 
 .post-excerpt {
@@ -704,7 +719,7 @@ const onTagSelect = (tag: string): void => {
   .main-content {
     margin-left: 0;
   }
-  
+
   .post-item-layout {
     flex-direction: column;
     gap: 12px;
