@@ -25,10 +25,20 @@
       <!-- 左侧：最新文章 + 精选文章 -->
       <n-grid-item>
         <!-- 精选文章 -->
-        <n-card title="🔥 精选文章" :bordered="false" size="medium">
+        <n-card :bordered="false" size="medium">
+          <template #header>
+            <router-link to="/blog" class="featured-title">
+              🔥 精选文章
+            </router-link>
+          </template>
           <n-list>
             <n-list-item v-for="post in featuredPosts" :key="post.id">
-              <n-thing :title="post.title">
+              <n-thing>
+                <template #header>
+                  <router-link :to="`/post/${post.id}`" class="post-title">
+                    {{ post.title }}
+                  </router-link>
+                </template>
                 <template #description>
                   <n-space size="small">
                     <n-tag type="info" size="small">{{ post.category }}</n-tag>
@@ -66,9 +76,9 @@
         <n-card title="👨‍💻 关于我" :bordered="false" size="medium">
           <n-p>- 👨‍🎓 在校学生，就读于重庆邮电大学，物联网工程系。</n-p>
           <n-p>- 💻 专注后端开发，偶尔写前端、做点小设计。</n-p>
-          <n-p>- 🌍 热爱开源，乐于分享，相信代码的价值在于连接与创造。</n-p>
+          <n-p>- 🌍 热爱开源，乐于分享，改变世界。</n-p>
           <n-p>- 🛠️ 目前主要使用Java、Go、Python进行物联网平台开发。</n-p>
-          <n-p>- 📚 纸质书籍爱好者，用镜头记录世界的美好，热爱音乐。</n-p>
+          <n-p>- 📚 纸质书籍爱好者，热爱音乐，感动常在。</n-p>
         </n-card>
 
         <!-- 技术栈 -->
@@ -258,6 +268,29 @@ const getIcon = (tech: TechType) => {
 
 .right-content :deep(.n-card:first-child) {
   margin-top: 0px;
+}
+
+.featured-title {
+  color: inherit;
+  text-decoration: none;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.featured-title:hover {
+  color: #f0a020;
+}
+
+.post-title {
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.post-title:hover {
+  color: #18a058;
+  text-decoration: underline;
 }
 
 </style>

@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '@/views/blog/HomeView.vue'
 import NotFound from '@/views/NotFound.vue'
+import BlogList from '@/views/blog/BlogList.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -10,6 +11,12 @@ const router = createRouter({
       name: 'home',
       component: HomeView,
       meta: { title: 'Home' },
+    },
+    {
+      path: '/blog',
+      name: 'blog',
+      component: BlogList,
+      meta: { title: 'Blog' },
     },
     // 404
     {
