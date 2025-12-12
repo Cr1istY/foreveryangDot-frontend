@@ -37,17 +37,26 @@
       </span>
     </div>
 
-    <!-- 日历格子 -->
+    <!-- 日历格子网格 -->
     <div class="days-grid">
       <div
         v-for="(item, index) in calendarDays"
         :key="index"
         class="day-cell"
-        :class="getDayClass(item)"
         :title="getTitle(item)"
         @click="handleDayClick(item)"
       >
-        <span>{{ item.date.getDate() }}</span>
+        <!-- 内容容器：控制背景色区域大小 -->
+        <div
+          class="cell-content"
+          :class="getCellContentClass(item)"
+        >
+          <span class="day-number">{{ item.date.getDate() }}</span>
+          <span
+            v-if="item.isCurrentMonth && !item.isFuture && item.count > 0"
+            class="dot"
+          ></span>
+        </div>
       </div>
     </div>
   </div>
@@ -56,8 +65,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { NButton, NIcon } from 'naive-ui';
-// Naive UI 图标（使用官方推荐方式）
-import {ArrowLeft, ArrowRight} from '@vicons/carbon';
+import { ArrowLeft, ArrowRight } from '@vicons/carbon';
 
 // 类型声明
 interface BlogPost {
@@ -69,15 +77,14 @@ interface BlogPost {
 }
 
 const today = new Date();
-today.setHours(0, 0, 0, 0); // 忽略时分秒，只比日期
+today.setHours(0, 0, 0, 0);
 const props = defineProps<{
   posts: BlogPost[];
-  selectedDate?: string; // ✅ 新增
+  selectedDate?: string;
 }>();
 const emit = defineEmits<{
   (e: 'date-click', date: string): void;
 }>();
-
 
 // ------------------ 工具函数 ------------------
 function isValidDateString(str: string): boolean {
@@ -88,7 +95,7 @@ function parseYearMonth(value: string): [number, number] | null {
   const match = value.match(/^(\d{4})-(\d{2})$/);
   if (!match) return null;
   const year = Number(match[1]);
-  const month = Number(match[2]); // 1-based
+  const month = Number(match[2]);
   if (isNaN(year) || isNaN(month) || month < 1 || month > 12) return null;
   return [year, month];
 }
@@ -111,7 +118,6 @@ const maxCount = computed<number>(() => {
 
 // ------------------ 状态 ------------------
 const selectedYearMonth = ref<string | null>(null);
-
 const weekdays = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'] as const;
 
 // ------------------ 初始化 ------------------
@@ -152,7 +158,7 @@ const prevMonth = (): void => {
   if (!selectedYearMonth.value) return;
   const parsed = parseYearMonth(selectedYearMonth.value);
   if (!parsed) return;
-  let [year, month] = parsed; // month is 1-based
+  let [year, month] = parsed;
   if (month === 1) {
     year--;
     month = 12;
@@ -166,7 +172,7 @@ const nextMonth = (): void => {
   if (!selectedYearMonth.value) return;
   const parsed = parseYearMonth(selectedYearMonth.value);
   if (!parsed) return;
-  let [year, month] = parsed; // month is 1-based
+  let [year, month] = parsed;
   if (month === 12) {
     year++;
     month = 1;
@@ -182,10 +188,12 @@ interface CalendarDay {
   dateStr: string;
   count: number;
   isCurrentMonth: boolean;
-  isFuture: boolean; // ✅ 新增
+  isFuture: boolean;
 }
+
 const todayStart = new Date();
 todayStart.setHours(0, 0, 0, 0);
+
 function isDateInFuture(d: Date): boolean {
   const dCopy = new Date(d);
   dCopy.setHours(0, 0, 0, 0);
@@ -193,8 +201,6 @@ function isDateInFuture(d: Date): boolean {
 }
 
 const calendarDays = computed<CalendarDay[]>(() => {
-
-
   if (selectedYearMonth.value === null) return [];
   const parsed = parseYearMonth(selectedYearMonth.value);
   if (!parsed) return [];
@@ -222,7 +228,7 @@ const calendarDays = computed<CalendarDay[]>(() => {
     days.push({ date, dateStr, count, isCurrentMonth: true, isFuture: isDateInFuture(date) });
   }
 
-  // 下个月
+  // 下个月（补足 6 周 = 42 天）
   const remaining = 42 - days.length;
   const nextMonthStart = new Date(year, month, 1);
   for (let i = 0; i < remaining; i++) {
@@ -237,24 +243,23 @@ const calendarDays = computed<CalendarDay[]>(() => {
 
 const handleDayClick = (item: CalendarDay): void => {
   if (item.isFuture) return;
-  console.log(item.dateStr);
-  emit('date-click', item.dateStr); // 👈 发出事件
+  emit('date-click', item.dateStr);
 };
 
 // ------------------ 样式 & 提示 ------------------
-const getDayClass = (item: CalendarDay): string => {
+const getCellContentClass = (item: CalendarDay): string => {
   if (item.isFuture) {
     return 'level-future';
   }
   if (!item.isCurrentMonth) {
     return 'level-outside';
   }
-  // ✅ 高亮选中日期（即使 count=0）
   if (props.selectedDate === item.dateStr) {
     return 'level-selected';
   }
   if (item.count === 0) return 'level-0';
-  const level = Math.ceil((item.count / maxCount.value) * 3);
+  const effectiveMax = Math.max(maxCount.value, 3); // 至少按 3 篇来算比例
+  const level = Math.ceil((item.count / effectiveMax) * 3);
   return `level-${Math.min(level, 3)}`;
 };
 
@@ -309,47 +314,74 @@ const getTitle = (item: CalendarDay): string => {
   gap: 2px;
 }
 
+/* 外层格子：固定大小，无背景 */
 .day-cell {
   aspect-ratio: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 4px;
-  font-size: 12px;
   cursor: default;
+  padding: 2px;
 }
 
-.day-cell.level-outside {
+/* 内层内容：实际显示背景色的区域 */
+.cell-content {
+  width: 75%;
+  height: 75%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3px;
+  position: relative;
+  font-size: 12px;
+}
+
+.day-number {
+  z-index: 1;
+}
+
+.dot {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 4px;
+  height: 4px;
+  background-color: #495057;
+  border-radius: 50%;
+  z-index: 2;
+}
+
+.cell-content.level-outside {
   background-color: transparent;
   color: #ccc;
 }
 
-.day-cell.level-0 {
+.cell-content.level-0 {
   background-color: #f0f0f0;
   color: #ccc;
 }
 
-.day-cell.level-1 {
+.cell-content.level-1 {
   background-color: #c6e48b;
   color: #191919;
 }
-.day-cell.level-2 {
+.cell-content.level-2 {
   background-color: #7bc96f;
   color: #191919;
 }
-.day-cell.level-3 {
+.cell-content.level-3 {
   background-color: #239a3b;
   color: white;
 }
 
-.day-cell.level-future {
+.cell-content.level-future {
   background-color: transparent !important;
   color: #ddd !important;
   cursor: not-allowed;
 }
 
-.day-cell.level-selected {
-  border: 2px solid #10b981 !important;
+.cell-content.level-selected {
+  border: 0px solid #10b981 !important;
   background-color: #dcfce7 !important;
   color: #065f46 !important;
 }
