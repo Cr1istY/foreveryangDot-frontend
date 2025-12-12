@@ -42,16 +42,16 @@
       </div>
 
       <div class="tag-cloud" style="margin-top: 24px;">
-        <n-h3 class="sidebar-title">🔖 分类标签</n-h3>
+        <n-h3 class="sidebar-title">🔖 所有标签</n-h3>
         <n-tag
-          v-for="tag in categoryCounts"
+          v-for="tag in tagCounts"
           :key="tag.name"
           size="small"
           round
           :bordered="true"
           :color="getTagColor(tag.name)"
           style="margin: 4px; cursor: pointer;"
-          @click="onCategorySelect(tag.name)"
+          @click="onTagSelect(tag.name)"
         >
           {{ tag.name }} ({{ tag.count }})
         </n-tag>
@@ -71,7 +71,15 @@
           </router-link>
           <div class="post-meta">
             <n-space size="small">
-              <n-tag type="info" size="small">{{ post.category }}</n-tag>
+              <n-tag
+                v-for="tag in post.tags"
+                :key="tag"
+                type="info"
+                size="small"
+                style="margin-right: 4px;"
+              >
+                {{ tag }}
+              </n-tag>
               <n-text type="secondary">{{ post.date }}</n-text>
             </n-space>
           </div>
@@ -120,7 +128,7 @@ const defaultThumbnail = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdo
 interface BlogPost {
   id: number;
   title: string;
-  category: string;
+  tags: string[];
   date: string;
   excerpt: string;
   thumbnail?: string;
@@ -131,11 +139,59 @@ const loading = ref<boolean>(true);
 const currentPage = ref<number>(1);
 const pageSize = ref<number>(6);
 const selectedDate = ref<string | undefined>(undefined);
-const selectedCategory = ref<string | undefined>(undefined);
+const selectedTag = ref<string | undefined>(undefined);
 const searchKeyword = ref<string>('');
 const searchSuggestions = ref<string[]>([]);
 const showSuggestions = ref<boolean>(false);
 const blurTimer = ref<number | null>(null);
+
+// ======================
+// 🔍 全文搜索：动态构建倒排索引（基于标题 + 标签）
+// ======================
+let mockInvertedIndex: Record<string, number[]> = {};
+
+/**
+ * 构建倒排索引（小写分词）
+ */
+const buildMockInvertedIndex = (posts: BlogPost[]): void => {
+  const index: Record<string, number[]> = {};
+  posts.forEach(post => {
+    const terms = new Set<string>();
+    // 标题分词
+    post.title.toLowerCase().split(/\s+/).forEach(t => terms.add(t));
+    // 标签加入
+    post.tags.forEach(tag => terms.add(tag.toLowerCase()));
+    // 写入索引
+    terms.forEach(term => {
+      if (!index[term]) index[term] = [];
+      if (!index[term].includes(post.id)) {
+        index[term].push(post.id);
+      }
+    });
+  });
+  mockInvertedIndex = index;
+};
+
+/**
+ * 全文搜索核心函数（AND 逻辑）
+ */
+const fullTextSearch = (query: string): number[] => {
+  const terms = query.toLowerCase().trim().split(/\s+/).filter(t => t.length > 0);
+  if (terms.length === 0) return [];
+
+  let resultIds: Set<number> | null = null;
+
+  for (const term of terms) {
+    const ids = mockInvertedIndex[term] || [];
+    if (resultIds === null) {
+      resultIds = new Set(ids);
+    } else {
+      resultIds = new Set(ids.filter(id => resultIds!.has(id)));
+    }
+  }
+
+  return resultIds ? Array.from(resultIds) : [];
+};
 
 // 加载文章（模拟）
 const loadAllPosts = async () => {
@@ -144,64 +200,68 @@ const loadAllPosts = async () => {
       {
         id: 1,
         title: '如何用 Naive UI 构建响应式博客',
-        category: 'Vue',
+        tags: ['Vue', 'UI', '响应式'],
         date: '2024-11-15',
         excerpt: '从零开始搭建一个支持桌面和手机访问的个人博客系统...',
       },
       {
         id: 2,
         title: 'Vue 3 性能优化的 10 个技巧',
-        category: '性能',
+        tags: ['Vue', '性能', '优化'],
         date: '2024-10-22',
         excerpt: '涵盖组件懒加载、响应式数据优化、编译时优化等实战方案...',
       },
       {
         id: 3,
         title: 'Vite 插件开发入门',
-        category: '工具链',
+        tags: ['Vite', '工具链', '插件'],
         date: '2024-12-08',
         excerpt: '深入 Vite 插件机制，手把手教你写一个自定义插件...',
       },
       {
         id: 4,
         title: 'TypeScript 泛型实战',
-        category: 'TypeScript',
+        tags: ['TypeScript', '泛型', '类型安全'],
         date: '2024-12-05',
         excerpt: '从基础到高级，掌握泛型在真实项目中的应用...',
       },
       {
         id: 5,
         title: '部署个人网站到 Vercel',
-        category: 'DevOps',
+        tags: ['DevOps', '部署', 'Vercel'],
         date: '2024-12-01',
         excerpt: '免费、快速、自动 HTTPS，一键部署你的静态博客...',
       },
       {
         id: 6,
         title: 'Go 语言并发模式详解',
-        category: 'Go',
+        tags: ['Go', '并发', 'goroutine'],
         date: '2024-11-28',
         excerpt: 'goroutine + channel 的经典组合，构建高并发服务...',
       },
       {
         id: 7,
         title: 'Arduino 与 MQTT 实现智能家居',
-        category: 'IoT',
+        tags: ['IoT', 'Arduino', 'MQTT'],
         date: '2024-11-20',
         excerpt: '使用 ESP32 连接 MQTT Broker，远程控制 LED...',
       },
       {
         id: 8,
         title: 'Java Spring Boot 最佳实践',
-        category: 'Java',
+        tags: ['Java', 'Spring', '后端'],
         date: '2024-11-10',
         excerpt: '从项目结构到异常处理，打造生产级后端服务...',
       }
     ];
 
+    // 按时间倒序
     allPosts.value = mockData.sort(
       (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
     );
+
+    // 构建搜索索引
+    buildMockInvertedIndex(allPosts.value);
   } catch (error) {
     useMessage().error('加载文章失败');
     console.error(error);
@@ -221,12 +281,12 @@ onUnmounted(() => {
   }
 });
 
-// 获取所有建议词（标题 + 分类）
+// 获取所有建议词（标题 + 标签）
 const getAllKeywords = (): string[] => {
   const keywords = new Set<string>();
   allPosts.value.forEach(post => {
     keywords.add(post.title);
-    keywords.add(post.category);
+    post.tags.forEach(tag => keywords.add(tag));
   });
   return Array.from(keywords);
 };
@@ -247,7 +307,7 @@ const computeSuggestions = (query: string): void => {
   showSuggestions.value = matches.length > 0;
 };
 
-// 类型安全的防抖函数
+// 防抖
 const debounce = <T extends (...args: string[]) => void>(
   func: T,
   delay: number
@@ -262,8 +322,6 @@ const debounce = <T extends (...args: string[]) => void>(
     }, delay);
   };
 };
-
-
 
 const debouncedCompute = debounce((val: string) => {
   computeSuggestions(val);
@@ -299,28 +357,30 @@ const onSearch = (): void => {
   currentPage.value = 1;
 };
 
-// 三重筛选逻辑
+// ======================
+// ✅ 筛选逻辑（搜索 + 日期 + 标签）
+// ======================
 const filteredPosts = computed(() => {
-  let result = [...allPosts.value];
+  let candidates = [...allPosts.value];
 
-  if (selectedDate.value) {
-    result = result.filter(post => post.date === selectedDate.value);
-  }
-
-  if (selectedCategory.value) {
-    result = result.filter(post => post.category === selectedCategory.value);
-  }
-
+  // 1. 全文搜索
   if (searchKeyword.value.trim()) {
-    const keyword = searchKeyword.value.trim().toLowerCase();
-    result = result.filter(
-      post =>
-        post.title.toLowerCase().includes(keyword) ||
-        post.excerpt.toLowerCase().includes(keyword)
-    );
+    const ids = fullTextSearch(searchKeyword.value);
+    const matchedIds = new Set(ids);
+    candidates = candidates.filter(post => matchedIds.has(post.id));
   }
 
-  return result;
+  // 2. 日期筛选
+  if (selectedDate.value) {
+    candidates = candidates.filter(post => post.date === selectedDate.value);
+  }
+
+  // 3. 标签筛选
+  if (selectedTag.value) {
+    candidates = candidates.filter(post => post.tags.includes(selectedTag.value!));
+  }
+
+  return candidates;
 });
 
 const paginatedPosts = computed(() => {
@@ -336,16 +396,19 @@ const handlePageSizeChange = (size: number): void => {
   currentPage.value = 1;
 };
 
-const categoryCounts = computed(() => {
+// 标签统计
+const tagCounts = computed(() => {
   const map: Record<string, number> = {};
   allPosts.value.forEach(post => {
-    map[post.category] = (map[post.category] || 0) + 1;
+    post.tags.forEach(tag => {
+      map[tag] = (map[tag] || 0) + 1;
+    });
   });
   return Object.entries(map).map(([name, count]) => ({ name, count }));
 });
 
-const getTagColor = (category: string) => {
-  if (selectedCategory.value === category) {
+const getTagColor = (tag: string) => {
+  if (selectedTag.value === tag) {
     return { color: '#e6f7ff', textColor: '#1890ff' };
   }
   return { color: '#f0f9ff', textColor: '#007bff' };
@@ -356,8 +419,8 @@ const onDateSelect = (date: string): void => {
   currentPage.value = 1;
 };
 
-const onCategorySelect = (category: string): void => {
-  selectedCategory.value = selectedCategory.value === category ? undefined : category;
+const onTagSelect = (tag: string): void => {
+  selectedTag.value = selectedTag.value === tag ? undefined : tag;
   currentPage.value = 1;
 };
 </script>

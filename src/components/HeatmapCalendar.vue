@@ -3,7 +3,7 @@
     <!-- 自定义年月导航栏 -->
     <n-grid cols="4" class="calendar-header">
       <n-gi span="3 400:1 600:2 800:3">
-        <span class="month-label">{{ currentMonthLabel }}</span>
+        <span class="month-label" style="padding-left: 10px;">{{ currentMonthLabel }}</span>
       </n-gi>
       <n-gi responsive="self">
         <n-button
@@ -71,7 +71,7 @@ import { ArrowLeft, ArrowRight } from '@vicons/carbon';
 interface BlogPost {
   id: number;
   title: string;
-  category: string;
+  tags: string[];
   date: string; // YYYY-MM-DD
   excerpt: string;
 }
