@@ -128,14 +128,19 @@ onMounted(() => {
 
 // ------------------ 导航逻辑 ------------------
 const MIN_YEAR = 2010;
-const MAX_YEAR = 2035;
+const MAX_YEAR = new Date().getFullYear();
+
+const monthNames = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'
+];
 
 const currentMonthLabel = computed<string>(() => {
   if (!selectedYearMonth.value) return '';
   const parsed = parseYearMonth(selectedYearMonth.value);
   if (!parsed) return '';
   const [year, month] = parsed;
-  return `${year}年${month}月`;
+  return `${monthNames[month - 1]} ${year} `; // 使用英文月份
 });
 
 const isPrevDisabled = computed<boolean>(() => {
