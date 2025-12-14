@@ -13,7 +13,7 @@ router.afterEach((to) => {
     document.title = to.meta.title as string
   } else {
     // 否则保留默认标题（或从其他地方获取，如组件内）
-    document.title = '张三的博客'
+    document.title = 'foreveryang.cn'
   }
 })
 

@@ -42,3 +42,4 @@ __screenshots__/
 .vscode/extensions.json
 .vscode
 public/avator.jpg
+.env
