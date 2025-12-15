@@ -115,7 +115,19 @@
               </template>
             </n-avatar-group>
           </div>
-          <p class="post-excerpt">{{ post.excerpt }}</p>
+          <div class="post-stats">
+            <p class="post-excerpt">{{ post.excerpt }}</p>
+            <div class="stats-container">
+              <div class="stat-item">
+                <n-icon size="16" :component="EyeOutline" />
+                <span>{{ formatNumber(post.views) }}</span>
+              </div>
+              <div class="stat-item">
+                <n-icon size="16" :component="HeartOutline" />
+                <span>{{ formatNumber(post.likes) }}</span>
+              </div>
+            </div>
+          </div>
         </div>
         <div class="post-thumbnail">
           <img
@@ -158,6 +170,7 @@
 import { ref, computed, onMounted, watch, onUnmounted, h } from 'vue'
 import { useMessage, NAvatar } from 'naive-ui'
 import HeatmapCalendar from '@/components/HeatmapCalendarComponent.vue'
+import { EyeOutline, HeartOutline } from '@vicons/ionicons5'
 
 // 默认占位图（80x80 SVG）
 const defaultThumbnail =
@@ -169,6 +182,8 @@ interface BlogPost {
   tags: string[]
   date: string
   excerpt: string
+  views: number
+  likes: number
   thumbnail?: string
 }
 
@@ -178,6 +193,8 @@ interface ApiPost {
   tags: string[]
   date: string
   excerpt: string
+  views: number
+  likes: number
   thumbnail?: string
 }
 
@@ -257,6 +274,8 @@ const loadAllPosts = async () => {
         tags: post.tags,
         date: post.date,
         excerpt: post.excerpt,
+        views: post.views * 100,
+        likes: post.likes * 100,
         thumbnail: post.thumbnail,
       }
     })
@@ -339,6 +358,8 @@ const getPostTagOptions = (post: BlogPost) => {
     }
   })
 }
+
+
 
 const createDropdownOptions = (
   restOptions: { name: string; src: string; fallbackText: string }[],
@@ -570,7 +591,12 @@ const handleImageLoad = (e: Event) => {
   })
 }
 
-
+const formatNumber = (num: number) => {
+  if (num >= 1000) {
+    return (num / 1000).toFixed(1) + 'k'
+  }
+  return num.toString()
+}
 </script>
 
 <style scoped>
@@ -645,18 +671,23 @@ const handleImageLoad = (e: Event) => {
   display: flex;
   align-items: center;
   gap: 4px;
-  margin: 4px 0 8px;
+  margin: 0px 0 2px;
 }
 
 .post-date {
   margin-right: 8px;
 }
 
-.post-excerpt {
-  font-size: 15px;
-  color: #4b5563;
-  line-height: 1.5;
+.post-stats {
   margin: 0;
+}
+
+.post-excerpt {
+  color: #333;
+  line-height: 1.6;
+  font-size: 0.95rem;
+  margin-top: 0;
+  margin-bottom: 0;
 }
 
 .post-thumbnail {
@@ -712,13 +743,17 @@ const handleImageLoad = (e: Event) => {
 
   .sidebar {
     width: 100%;
+    height: 100%;
+    display: block;
     position: static;
     left: auto;
     margin-bottom: 32px;
+    margin-bottom: 0;
   }
 
   .main-content {
     margin-left: 0;
+    margin-top: 0;
   }
 
   .post-item-layout {
@@ -775,4 +810,42 @@ const handleImageLoad = (e: Event) => {
   transform: scale(1.05);
 }
 
+.stats-container {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: #666;
+  font-size: 0.85rem;
+  transition: all 0.2s ease;
+}
+
+.stat-item:hover {
+  color: #333;
+}
+
+.stat-item span {
+  font-weight: 500;
+}
+
+/* 极简风格：移除所有装饰效果 */
+.stat-item {
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+
+/* 图标样式微调 */
+:deep(.n-icon) {
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.stat-item:hover :deep(.n-icon) {
+  opacity: 1;
+}
 </style>
