@@ -33,7 +33,7 @@
             </n-button>
           </template>
           <n-list>
-            <n-list-item v-for="post in featuredPosts" :key="post.id">
+            <n-list-item v-for="post in hotPosts" :key="post.id">
               <n-thing>
                 <template #header>
                   <router-link :to="`/post/${post.id}`" class="post-title">
@@ -55,7 +55,7 @@
         </n-card>
 
         <!-- 最新文章 -->
-        <n-card title="📝 最新文章" :bordered="false" size="medium" style="margin-top: 24px;">
+        <n-card title="📝 最新文章" :bordered="false" size="medium" style="margin-top: 0px;">
           <n-list>
             <n-list-item v-for="post in latestPosts" :key="post.id">
               <n-thing :title="post.title">
@@ -76,14 +76,13 @@
         <!-- 关于我 -->
         <n-card title="👨‍💻 关于我" :bordered="false" size="medium">
           <n-p>- 👨‍🎓 在校学生，就读于重庆邮电大学，物联网工程系。</n-p>
-          <n-p>- 💻 专注后端开发，偶尔写前端、做点小设计。</n-p>
           <n-p>- 🌍 热爱开源，乐于分享，改变世界。</n-p>
           <n-p>- 🛠️ 目前主要使用Java、Go、Python进行物联网平台开发。</n-p>
           <n-p>- 📚 纸质书籍爱好者，热爱音乐，感动常在。</n-p>
         </n-card>
 
         <!-- 技术栈 -->
-        <n-card title="🛠 技术栈" :bordered="false" size="medium" style="margin-top: 12px;">
+        <n-card title="🛠 技术栈" :bordered="false" size="medium" style="margin-top: 0px;">
           <n-space wrap :size="[12, 12]">
             <n-tag v-for="tech in techStack" :key="tech" type="info" size="small" round>
               <template #icon>
@@ -111,7 +110,7 @@
         </n-card>
 
         <!-- 联系方式 -->
-        <n-card title="📬 联系我" :bordered="false" size="medium" style="margin-top: 6px; margin-bottom: 24px;">
+        <n-card title="📬 联系我" :bordered="false" size="medium" style="margin-top: 0px; margin-bottom: 24px;">
           <n-space vertical>
             <n-button text tag="a" href="mailto:cr1st4ever@outlook.com">
               📧 cr1st4ever@outlook.com
@@ -160,35 +159,55 @@ import type { Component } from 'vue'
 import { defineComponent } from 'vue'
 import { Icon } from '@iconify/vue'
 
+import { ref, onMounted } from 'vue'
+
+const fetchPosts = async <T>(endpoint: string): Promise<T[]> => {
+  const response = await fetch(endpoint)
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`)
+  }
+  return response.json() as Promise<T[]>
+}
 
 const isMobile = ref(window.innerWidth < 768)
 window.addEventListener('resize', () => {
   isMobile.value = window.innerWidth < 768
 })
 
-// 模拟数据
-const featuredPosts = [
-  {
-    id: 1,
-    title: '如何用 Naive UI 构建响应式博客',
-    category: 'Vue',
-    date: '2024-11-15',
-    excerpt: '从零开始搭建一个支持桌面和手机访问的个人博客系统...'
-  },
-  {
-    id: 2,
-    title: 'Vue 3 性能优化的 10 个技巧',
-    category: '性能',
-    date: '2024-10-22',
-    excerpt: '涵盖组件懒加载、响应式数据优化、编译时优化等实战方案...涵盖组件懒加载、响应式数据优化、编译时优化等实战方案...'
-  }
-]
+interface HotPost {
+  id: number
+  title: string
+  category: string
+  date: string
+  excerpt: string
+}
 
-const latestPosts = [
-  { id: 3, title: 'Vite 插件开发入门', category: '工具链', date: '2024-12-08' },
-  { id: 4, title: 'TypeScript 泛型实战', category: 'TypeScript', date: '2024-12-05' },
-  { id: 5, title: '部署个人网站到 Vercel', category: 'DevOps', date: '2024-12-01' }
-]
+interface LatestPost {
+  id: number
+  title: string
+  category: string
+  date: string
+}
+
+const hotPosts = ref<HotPost[]>([])
+const latestPosts = ref<LatestPost[]>([])
+
+// 模拟数据
+const loadPosts = async () => {
+  try {
+    const [hot, latest] = await Promise.all([
+      fetchPosts<HotPost>('/api/posts/hot'),
+      fetchPosts<LatestPost>('/api/posts/latest')
+    ])
+
+    hotPosts.value = hot
+    latestPosts.value = latest
+  } catch (error) {
+    console.error('Failed to load posts:', error)
+    // 可以在这里添加错误处理逻辑，比如显示错误消息
+  }
+}
+
 
 const GoIcon = defineComponent({
   render() {
@@ -255,6 +274,10 @@ const iconMap: Record<TechType, Component> = {
 const getIcon = (tech: TechType) => {
   return iconMap[tech] ?? Code
 }
+
+onMounted(() => {
+  loadPosts()
+})
 
 </script>
 

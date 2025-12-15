@@ -257,7 +257,6 @@ const fullTextSearch = (query: string): number[] => {
   return resultIds ? Array.from(resultIds) : []
 }
 
-// 加载文章（模拟）
 const loadAllPosts = async () => {
   try {
     loading.value = true
@@ -274,8 +273,8 @@ const loadAllPosts = async () => {
         tags: post.tags,
         date: post.date,
         excerpt: post.excerpt,
-        views: post.views * 100,
-        likes: post.likes * 100,
+        views: post.views > 10000 ? post.views :post.views * 100,
+        likes: post.likes > 10000 ? post.likes :post.likes * 100,
         thumbnail: post.thumbnail,
       }
     })
