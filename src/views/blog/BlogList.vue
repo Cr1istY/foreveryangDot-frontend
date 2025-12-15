@@ -153,7 +153,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, onUnmounted, h } from 'vue'
 import { useMessage, NAvatar } from 'naive-ui'
-import markdownToPlainText from '@/utils/cleanMarkdown'
 import HeatmapCalendar from '@/components/HeatmapCalendar.vue'
 
 // 默认占位图（80x80 SVG）
@@ -172,7 +171,6 @@ interface BlogPost {
 interface ApiPost {
   id: number
   title: string
-  content: string
   tags: string[]
   date: string
   excerpt: string
@@ -224,7 +222,11 @@ const fullTextSearch = (query: string): number[] => {
 
   let resultIds: Set<number> | null = null
   for (const term of terms) {
-    const ids = mockInvertedIndex[term] || []
+    // 修改：添加类型断言和过滤，确保只包含有效的数字
+    const ids = Object.keys(mockInvertedIndex)
+      .filter(key => key.includes(term))
+      .flatMap(key => mockInvertedIndex[key] || [])
+      .filter((id): id is number => id !== undefined)
     if (resultIds === null) {
       resultIds = new Set(ids)
     } else {
@@ -245,14 +247,6 @@ const loadAllPosts = async () => {
     const apiPost: ApiPost[] = await response.json()
 
     const blogPost: BlogPost[] = apiPost.map((post) => {
-      if (!post.excerpt) {
-        const plainText = markdownToPlainText(post.content || '')
-        let excerpt = plainText
-        if (excerpt.length > 20) {
-          excerpt = excerpt.substring(0, 20).trim() + '...'
-        }
-        post.excerpt = excerpt
-      }
       return {
         id: post.id,
         title: post.title,
@@ -381,7 +375,10 @@ const computeSuggestions = (query: string): void => {
   }
   const lowerQuery = query.toLowerCase()
   const allKeywords = getAllKeywords()
-  const matches = allKeywords.filter((kw) => kw.toLowerCase().includes(lowerQuery)).slice(0, 5)
+  // 修改：使用 includes 而不是严格的匹配
+  const matches = allKeywords
+    .filter((kw) => kw.toLowerCase().includes(lowerQuery))
+    .slice(0, 5)
   searchSuggestions.value = matches
   showSuggestions.value = matches.length > 0
 }
