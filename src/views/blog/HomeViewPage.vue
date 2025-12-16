@@ -284,9 +284,28 @@ onMounted(() => {
 <style scoped>
 
 .page-container {
-  min-height: 100vh;
+  height: 100vh;
   display: flex;
   flex-direction: column;
+  /* 添加以下属性 */
+  width: 1200px; /* 设置固定宽度 */
+  margin: 0 auto; /* 居中显示 */
+  transform-origin: top center; /* 设置缩放基准点 */
+}
+
+/* 添加媒体查询来处理缩放 */
+@media screen {
+  .page-container {
+    /* 计算缩放比例 */
+    transform: scale(calc(100vw / 1200));
+  }
+}
+
+/* 当视口宽度大于1200px时，不需要缩放 */
+@media screen and (min-width: 1200px) {
+  .page-container {
+    transform: scale(1);
+  }
 }
 
 .content-wrapper {
@@ -315,13 +334,15 @@ onMounted(() => {
 
 .intro-text {
   max-width: 600px;
-  margin: 0 auto; /* 添加水平居中 */
+  margin: 0 auto;
 }
+
 .bio {
   margin-top: 8px;
   color: var(--n-text-color);
   line-height: 1.6;
 }
+
 .right-content {
   display: flex;
   flex-direction: column;
@@ -387,13 +408,10 @@ onMounted(() => {
   color: #666;
 }
 
-
 @media (max-width: 768px) {
-
   .content-wrapper {
     padding: 0;
     margin: 0;
-
   }
 
   .main-grid {
@@ -412,6 +430,12 @@ onMounted(() => {
 
   .hero-section {
     padding: 32px 16px;
+  }
+
+  /* 移动端禁用缩放 */
+  .page-container {
+    transform: none;
+    width: 100%;
   }
 }
 </style>
