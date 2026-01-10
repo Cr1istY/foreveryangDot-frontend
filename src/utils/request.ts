@@ -7,13 +7,14 @@ interface RefreshResponse {
   access_token: string
 }
 
+export interface AxiosRetryConfig extends AxiosRequestConfig {
+  _retry?: boolean
+  customErrorHandling?: boolean
+}
+
 interface FailedQueueCallback {
   resolve: (value?: string) => void
   reject: (error?: Error) => void
-}
-
-interface AxiosRetryConfig extends AxiosRequestConfig {
-  _retry?: boolean
 }
 
 const service: AxiosInstance = axios.create({
@@ -49,6 +50,10 @@ service.interceptors.response.use(
   (response) => response,
   async (error) => {
     const oringnalRequest = error.config as AxiosRetryConfig
+    if (oringnalRequest.customErrorHandling) {
+      return Promise.reject(error)
+    }
+
     if (error.response.status === 401 && !oringnalRequest._retry) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
@@ -89,7 +94,6 @@ service.interceptors.response.use(
     return Promise.reject(error)
   }
 )
-
 
 
 

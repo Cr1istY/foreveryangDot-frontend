@@ -49,9 +49,7 @@
           >
             登录
           </n-button>
-          <n-button text @click="handleForgotPassword" class="forgot-link">
-            忘记密码？
-          </n-button>
+          <n-button text @click="handleForgotPassword" class="forgot-link"> 忘记密码？ </n-button>
         </n-space>
       </n-form>
     </n-card>
@@ -64,6 +62,9 @@ import { ref } from 'vue'
 import type { FormInst, FormRules } from 'naive-ui'
 import { useMessage } from 'naive-ui'
 import request from '@/utils/request'
+import type { AxiosRetryConfig } from '@/utils/request'
+import router from '@/router/index'
+import type { AxiosError } from 'axios'
 
 interface LoginForm {
   username: string
@@ -76,7 +77,7 @@ const message = useMessage()
 
 const formValue = ref<LoginForm>({
   username: '',
-  password: ''
+  password: '',
 })
 
 interface LoginResponse {
@@ -87,36 +88,66 @@ const rules: FormRules = {
   username: {
     required: true,
     message: '请输入用户名',
-    trigger: 'blur'
+    trigger: 'blur',
   },
   password: {
     required: true,
     message: '请输入密码',
     trigger: 'blur',
-    validator(rule, value) {
+    validator(_, value) {
       if (value && value.length < 6) {
         return new Error('密码至少6位')
       }
       return true
-    }
-  }
+    },
+  },
 }
 
 const handleSubmit = async () => {
   if (!formRef.value) return
   try {
+    // 表单验证
     await formRef.value.validate()
-    const res = await request.post<LoginResponse>('/login', formValue.value)
-    const token = res.data.access_token
-    if (token) {
-      localStorage.setItem('access_token', token)
-      message.success('登录成功')
-    } else {
-      message.error('登录失败，请检查用户名和密码')
+
+    try {
+      // API 请求
+      const res = await request.post<LoginResponse>('/login', formValue.value, {
+        customErrorHandling: true
+      } as AxiosRetryConfig)
+      const token = res.data.access_token
+
+      if (token) {
+        localStorage.setItem('access_token', token)
+        message.success('登录成功')
+        router.push('/admin/dashboard')
+      } else {
+        message.error('登录失败，请检查用户名和密码')
+      }
+    } catch (apiError: unknown) {
+      if (apiError && typeof apiError === 'object' && 'response' in apiError) {
+        // 处理 API 请求错误
+        const error = apiError as AxiosError
+        if (error.response) {
+          // 服务器返回了错误状态码
+          const status = error.response.status
+          if (status === 401) {
+            message.error('用户名或密码错误')
+          } else {
+            message.error(`服务器错误: ${status}`)
+          }
+        } else if (error.request) {
+          // 请求已发出但没有收到响应
+          message.error('网络错误，请检查网络连接')
+        } else {
+          // 其他错误
+          message.error('登录失败，请稍后重试')
+        }
+      }
     }
-  } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : '登录失败，请检查用户名和密码'
-    message.error(errorMessage)
+  } catch (validationError: Error | unknown) {
+    // 处理表单验证错误
+    console.error('表单验证失败:', validationError)
+    message.error('请检查输入内容')
   }
 }
 
@@ -144,7 +175,6 @@ const handleForgotPassword = () => {
   opacity: 0.8;
 }
 
-
 .login-card {
   width: 100%;
   max-width: 420px;
@@ -154,7 +184,9 @@ const handleForgotPassword = () => {
   background: rgba(255, 255, 255, 0.7);
   border: 1px solid rgba(255, 255, 255, 0.5);
   padding: 32px;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
 }
 
 .login-card:hover {
